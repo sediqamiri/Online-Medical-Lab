@@ -1,0 +1,19 @@
+{
+    "name": "Online Medical Lab",
+    "short_name": "Online Medical Lab",
+    "start_url": ".",
+    "display": "standalone",
+    "background_color": "#F3F7FB",
+    "theme_color": "#0F766E",
+    "description": "Online Medical Lab helps patients, doctors, and labs manage bookings, reports, and care flow from one cleaner web workspace.",
+    "orientation": "portrait-primary",
+    "prefer_related_applications": false,
+    "icons": [
+        {
+            "src": "favicon.svg",
+            "sizes": "any",
+            "type": "image/svg+xml",
+            "purpose": "any maskable"
+        }
+    ]
+}
