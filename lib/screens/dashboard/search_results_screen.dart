@@ -12,6 +12,12 @@ class SearchResultsScreen extends StatelessWidget {
   });
 
   final String testName;
+  static const List<String> _popularSearches = [
+    'Full Blood Count',
+    'Lipid Profile',
+    'Thyroid Profile',
+    'Blood Sugar',
+  ];
 
   static const List<_LabOption> _labs = [
     _LabOption(
@@ -21,6 +27,14 @@ class SearchResultsScreen extends StatelessWidget {
       location: 'Kabul',
       turnaround: 'Same day',
       accent: AppColors.primary,
+      supportedSearchTerms: [
+        'Full Blood Count',
+        'Complete Blood Count',
+        'CBC',
+        'Blood Sugar',
+        'Glucose Fasting',
+        'Lipid Profile',
+      ],
     ),
     _LabOption(
       name: 'Afghan-Swiss Lab',
@@ -29,6 +43,13 @@ class SearchResultsScreen extends StatelessWidget {
       location: 'Shahr-e-Naw',
       turnaround: '6 hours',
       accent: AppColors.accent,
+      supportedSearchTerms: [
+        'Full Blood Count',
+        'Lipid Profile',
+        'Thyroid Profile',
+        'Thyroid Test',
+        'Thyroid (T3, T4, TSH)',
+      ],
     ),
     _LabOption(
       name: 'Zuhal Diagnostic',
@@ -37,6 +58,11 @@ class SearchResultsScreen extends StatelessWidget {
       location: 'Karte Parwan',
       turnaround: 'Next morning',
       accent: AppColors.warm,
+      supportedSearchTerms: [
+        'Blood Sugar',
+        'Glucose Fasting',
+        'Urine Routine',
+      ],
     ),
     _LabOption(
       name: 'Hayat Medical',
@@ -45,14 +71,22 @@ class SearchResultsScreen extends StatelessWidget {
       location: 'Wazir Akbar Khan',
       turnaround: 'Same day',
       accent: AppColors.primaryBright,
+      supportedSearchTerms: [
+        'Full Blood Count',
+        'Lipid Profile',
+        'Thyroid Profile',
+      ],
     ),
   ];
 
   @override
   Widget build(BuildContext context) {
-    final sortedLabs = [..._labs]..sort((first, second) => first.price.compareTo(second.price));
-    final bestPrice = sortedLabs.first.price;
-    final bestRated = [..._labs]..sort((first, second) => second.rating.compareTo(first.rating));
+    final matchingLabs = _labs.where((lab) => lab.supports(testName)).toList();
+    final sortedLabs = [...matchingLabs]
+      ..sort((first, second) => first.price.compareTo(second.price));
+    final bestPrice = sortedLabs.isEmpty ? null : sortedLabs.first.price;
+    final bestRated = [...matchingLabs]
+      ..sort((first, second) => second.rating.compareTo(first.rating));
 
     return Scaffold(
       body: DecoratedBox(
@@ -114,32 +148,63 @@ class SearchResultsScreen extends StatelessWidget {
                 child: ListView(
                   padding: const EdgeInsets.fromLTRB(20, 18, 20, 28),
                   children: [
-                    _SearchHeroCard(
-                      testName: testName,
-                      resultCount: _labs.length,
-                      bestPrice: bestPrice,
-                      bestRatedLab: bestRated.first.name,
-                    ),
-                    const SizedBox(height: 20),
-                    const _SectionHeading(
-                      title: 'Recommended labs',
-                      subtitle: 'Choose the turnaround, location, and price that fit your visit best.',
-                    ),
-                    const SizedBox(height: 14),
-                    for (final lab in _labs)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 14),
-                        child: _LabResultCard(
-                          lab: lab,
-                          testName: testName,
-                        ),
+                    if (matchingLabs.isNotEmpty) ...[
+                      _SearchHeroCard(
+                        testName: testName,
+                        resultCount: matchingLabs.length,
+                        bestPrice: bestPrice!,
+                        bestRatedLab: bestRated.first.name,
                       ),
+                      const SizedBox(height: 20),
+                      const _SectionHeading(
+                        title: 'Recommended labs',
+                        subtitle:
+                            'Choose the turnaround, location, and price that fit your visit best.',
+                      ),
+                      const SizedBox(height: 14),
+                      for (final lab in matchingLabs)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 14),
+                          child: _LabResultCard(
+                            lab: lab,
+                            testName: testName,
+                          ),
+                        ),
+                    ] else ...[
+                      _EmptyResultsCard(testName: testName),
+                      const SizedBox(height: 20),
+                      const _SectionHeading(
+                        title: 'Try a popular search',
+                        subtitle:
+                            'These starter searches have matching labs in the demo data.',
+                      ),
+                      const SizedBox(height: 14),
+                      Wrap(
+                        spacing: 12,
+                        runSpacing: 12,
+                        children: [
+                          for (final suggestion in _popularSearches)
+                            _SearchSuggestionChip(
+                              label: suggestion,
+                              onTap: () => _openSuggestion(context, suggestion),
+                            ),
+                        ],
+                      ),
+                    ],
                   ],
                 ),
               ),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  void _openSuggestion(BuildContext context, String suggestion) {
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(
+        builder: (_) => SearchResultsScreen(testName: suggestion),
       ),
     );
   }
@@ -444,6 +509,60 @@ class _SectionHeading extends StatelessWidget {
   }
 }
 
+class _EmptyResultsCard extends StatelessWidget {
+  const _EmptyResultsCard({
+    required this.testName,
+  });
+
+  final String testName;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(32),
+        border: Border.all(color: AppColors.line),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.ink.withValues(alpha: 0.04),
+            blurRadius: 18,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            height: 52,
+            width: 52,
+            decoration: BoxDecoration(
+              color: AppColors.warm.withValues(alpha: 0.14),
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: const Icon(
+              Icons.search_off_rounded,
+              color: AppColors.warm,
+            ),
+          ),
+          const SizedBox(height: 18),
+          Text(
+            'No exact matches yet for $testName.',
+            style: Theme.of(context).textTheme.headlineSmall,
+          ),
+          const SizedBox(height: 10),
+          Text(
+            'That search is not mapped to any lab in the current demo catalog. Try a common test name below to keep exploring the booking flow.',
+            style: Theme.of(context).textTheme.bodyLarge,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _HeroStat extends StatelessWidget {
   const _HeroStat({
     required this.label,
@@ -486,6 +605,25 @@ class _HeroStat extends StatelessWidget {
   }
 }
 
+class _SearchSuggestionChip extends StatelessWidget {
+  const _SearchSuggestionChip({
+    required this.label,
+    required this.onTap,
+  });
+
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return OutlinedButton.icon(
+      onPressed: onTap,
+      icon: const Icon(Icons.search_rounded),
+      label: Text(label),
+    );
+  }
+}
+
 class _InlineMeta extends StatelessWidget {
   const _InlineMeta({
     required this.icon,
@@ -524,6 +662,7 @@ class _LabOption {
     required this.location,
     required this.turnaround,
     required this.accent,
+    required this.supportedSearchTerms,
   });
 
   final String name;
@@ -532,4 +671,26 @@ class _LabOption {
   final String location;
   final String turnaround;
   final Color accent;
+  final List<String> supportedSearchTerms;
+
+  bool supports(String query) {
+    final normalizedQuery = _normalizeSearchTerm(query);
+    if (normalizedQuery.isEmpty) {
+      return false;
+    }
+
+    return supportedSearchTerms.any((term) {
+      final normalizedTerm = _normalizeSearchTerm(term);
+      return normalizedTerm.contains(normalizedQuery) ||
+          normalizedQuery.contains(normalizedTerm);
+    });
+  }
+}
+
+String _normalizeSearchTerm(String value) {
+  return value
+      .toLowerCase()
+      .replaceAll(RegExp(r'[^a-z0-9]+'), ' ')
+      .replaceAll(RegExp(r'\s+'), ' ')
+      .trim();
 }
